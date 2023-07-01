@@ -1,11 +1,11 @@
 package oauth
 
 import (
-	"net/http"
-
 	dto "e-course-management/internal/oauth/dto"
 	usecase "e-course-management/internal/oauth/usecase"
 	"e-course-management/pkg/response"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 

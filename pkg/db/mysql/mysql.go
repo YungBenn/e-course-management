@@ -11,9 +11,11 @@ import (
 
 func DB() *gorm.DB {
 	err := godotenv.Load()
+	
 	if err != nil {
 		panic("Failed to read .env file")
 	}
+
 	host := os.Getenv("MYSQL_HOST")
 	port := os.Getenv("MYSQL_PORT")
 	dbname := os.Getenv("MYSQL_DATABASE")

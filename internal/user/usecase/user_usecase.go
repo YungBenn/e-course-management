@@ -18,7 +18,7 @@ type UserUseCase interface {
 	FindOneById(id int) (*entity.User, *response.Error)
 	Create(dto dto.UserRequestBody) (*entity.User, *response.Error)
 	FindOneByCodeVerified(codeVerified string) (*entity.User, *response.Error)
-	Update(id int, dto dto.UserRequestBody) (*entity.User, *response.Error)
+	Update(id int, dto dto.UserUpdateRequestBody) (*entity.User, *response.Error)
 	Delete(id int) *response.Error
 	TotalCountUser() int64
 }
@@ -31,7 +31,7 @@ type userUseCase struct {
 func (usecase *userUseCase) Create(dto dto.UserRequestBody) (*entity.User, *response.Error) {
 	checkUser, err := usecase.repository.FindByEmail(dto.Email)
 
-	if err != nil && !errors.Is(err.Err, gorm.ErrRecordNotFound){
+	if err != nil && !errors.Is(err.Err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 
@@ -55,10 +55,10 @@ func (usecase *userUseCase) Create(dto dto.UserRequestBody) (*entity.User, *resp
 	}
 
 	user := entity.User{
-		Name:            dto.Name,
-		Email:           dto.Email,
-		Password:        string(hashedPassword),
-		CodeVerified:    utils.RandString(32),
+		Name:         dto.Name,
+		Email:        dto.Email,
+		Password:     string(hashedPassword),
+		CodeVerified: utils.RandString(32),
 	}
 
 	dataUser, err := usecase.repository.Create(user)
@@ -104,8 +104,34 @@ func (*userUseCase) TotalCountUser() int64 {
 }
 
 // Update implements UserUseCase.
-func (*userUseCase) Update(id int, dto dto.UserRequestBody) (*entity.User, *response.Error) {
-	panic("unimplemented")
+func (usecase *userUseCase) Update(id int, dto dto.UserUpdateRequestBody) (*entity.User, *response.Error) {
+	// Cari user berdasarkan id
+	user, err := usecase.repository.FindOneById(id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if dto.Password != nil {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*dto.Password), bcrypt.DefaultCost)
+
+		if err != nil {
+			return nil, &response.Error{
+				Code: 500,
+				Err:  err,
+			}
+		}
+
+		user.Password = string(hashedPassword)
+	}
+
+	updateUser, err := usecase.repository.Update(*user)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return updateUser, nil
 }
 
 func NewUserUseCase(repository repository.UserRepository) UserUseCase {
