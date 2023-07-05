@@ -9,7 +9,7 @@ import (
 
 type OauthAccessTokenRepository interface {
 	Create(entity entity.OauthAccessToken) (*entity.OauthAccessToken, *response.Error)
-	Delete(entity.OauthAccessToken) *response.Error
+	Delete(entity entity.OauthAccessToken) *response.Error
 	FindOneByAccessToken(accessToken string) (*entity.OauthAccessToken, *response.Error)
 }
 
@@ -30,13 +30,29 @@ func (repository *oauthAccessTokenRepository) Create(entity entity.OauthAccessTo
 }
 
 // Delete implements OauthAccessTokenRepository.
-func (*oauthAccessTokenRepository) Delete(entity.OauthAccessToken) *response.Error {
-	panic("unimplemented")
+func (repository *oauthAccessTokenRepository) Delete(entity entity.OauthAccessToken) *response.Error {
+	if err := repository.db.Delete(&entity).Error; err != nil {
+		return &response.Error{
+			Code: 500,
+			Err:  err,
+		}
+	}
+
+	return nil
 }
 
 // FindOneByAccessToken implements OauthAccessTokenRepository.
-func (*oauthAccessTokenRepository) FindOneByAccessToken(accessToken string) (*entity.OauthAccessToken, *response.Error) {
-	panic("unimplemented")
+func (repository *oauthAccessTokenRepository) FindOneByAccessToken(accessToken string) (*entity.OauthAccessToken, *response.Error) {
+	var oauthAccessToken entity.OauthAccessToken
+
+	if err := repository.db.Where("token = ?", accessToken).First(&oauthAccessToken).Error; err != nil {
+		return nil, &response.Error{
+			Code: 500,
+			Err:  err,
+		}
+	}
+
+	return &oauthAccessToken, nil
 }
 
 func NewOauthAccessTokenRepository(db *gorm.DB) OauthAccessTokenRepository {
